@@ -19,8 +19,11 @@ export type Database = {
           answers: Json
           category_scores: Json
           created_at: string | null
+          data_storage_consent: boolean | null
+          email: string | null
           id: string
           overall_percent: number
+          pdf_data: string | null
           profile: string
           user_id: string | null
         }
@@ -28,8 +31,11 @@ export type Database = {
           answers: Json
           category_scores: Json
           created_at?: string | null
+          data_storage_consent?: boolean | null
+          email?: string | null
           id?: string
           overall_percent: number
+          pdf_data?: string | null
           profile: string
           user_id?: string | null
         }
@@ -37,8 +43,11 @@ export type Database = {
           answers?: Json
           category_scores?: Json
           created_at?: string | null
+          data_storage_consent?: boolean | null
+          email?: string | null
           id?: string
           overall_percent?: number
+          pdf_data?: string | null
           profile?: string
           user_id?: string | null
         }

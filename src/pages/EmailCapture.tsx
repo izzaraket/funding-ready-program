@@ -7,12 +7,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Mail, ArrowRight, Download } from 'lucide-react';
 import { calculateResults } from '@/lib/scoring';
+import { PROFILE_COPY } from '@/lib/copy';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const EmailCapture = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPDFRequest, setIsPDFRequest] = useState(false);
+  const [consentToSaveData, setConsentToSaveData] = useState(true);
 
   useEffect(() => {
     // Check if this is a PDF download request
@@ -47,7 +50,7 @@ const EmailCapture = () => {
       if (error) throw error;
 
       // Always generate and download PDF, and send via email
-      await generateAndDownloadPDF(email);
+      await generateAndDownloadPDF(email, consentToSaveData);
       sessionStorage.removeItem('requestPDF');
       toast.success('PDF downloaded and sent to your email! Redirecting to workshop signup...');
       
@@ -64,11 +67,13 @@ const EmailCapture = () => {
     }
   };
 
-  const generateAndDownloadPDF = async (userEmail: string) => {
+  const generateAndDownloadPDF = async (userEmail: string, saveToDatabase: boolean = false) => {
     try {
       // Prefer precomputed results to avoid relying on answers
       const savedResults = localStorage.getItem('funding-readiness-results');
       let results: any;
+      let answers: any;
+      
       if (savedResults) {
         results = JSON.parse(savedResults);
       } else {
@@ -77,14 +82,28 @@ const EmailCapture = () => {
           toast.error('Please complete the assessment first.');
           return null;
         }
-        const answers = JSON.parse(savedAnswers);
+        answers = JSON.parse(savedAnswers);
         results = calculateResults(answers);
       }
+
+      // Get answers for database storage if not already loaded
+      if (!answers) {
+        const savedAnswers = localStorage.getItem('funding-readiness-answers');
+        if (savedAnswers) {
+          answers = JSON.parse(savedAnswers);
+        }
+      }
+
+      // Get profile details from copy
+      const profileDetails = PROFILE_COPY[results.profile as keyof typeof PROFILE_COPY];
 
       const { data, error } = await supabase.functions.invoke('generate-pdf', {
         body: { 
           results,
-          userEmail
+          profileDetails,
+          userEmail,
+          saveToDatabase,
+          answers
         }
       });
 
@@ -214,6 +233,21 @@ const EmailCapture = () => {
               )}
             </Button>
           </form>
+
+          <div className="flex items-start space-x-3 mt-4">
+            <Checkbox
+              id="consent"
+              checked={consentToSaveData}
+              onCheckedChange={(checked) => setConsentToSaveData(!!checked)}
+              className="mt-1"
+            />
+            <label
+              htmlFor="consent"
+              className="text-sm text-muted-foreground cursor-pointer leading-relaxed"
+            >
+              I consent to having my assessment data (email, answers, results, and PDF) saved in your database for future reference and potential follow-up communications. You can opt out at any time.
+            </label>
+          </div>
 
           <p className="text-xs text-muted-foreground mt-4 text-center">
             By providing your email, you agree to receive updates about our funding readiness workshop.

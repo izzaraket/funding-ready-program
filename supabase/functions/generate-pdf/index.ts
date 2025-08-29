@@ -16,7 +16,16 @@ interface PDFRequest {
     profile: string;
     overallPercent: number;
   };
+  profileDetails: {
+    description: string;
+    funderPerspective: string;
+    detailedFeedback: string;
+    nextStep: string;
+    resources?: Array<{ name: string; url: string }>;
+  };
   userEmail: string;
+  saveToDatabase?: boolean;
+  answers?: any;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -26,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { results, userEmail }: PDFRequest = await req.json();
+    const { results, profileDetails, userEmail, saveToDatabase, answers }: PDFRequest = await req.json();
 
     console.log('Generating PDF for:', userEmail);
 
@@ -83,10 +92,10 @@ const handler = async (req: Request): Promise<Response> => {
       // Profile section
       yPos += 25;
       doc.setFillColor(254, 243, 199); // Light yellow background
-      doc.rect(10, yPos - 5, 190, 20, 'F');
+      doc.rect(10, yPos - 5, 190, 30, 'F');
       
       doc.setFillColor(245, 158, 11); // Orange border
-      doc.rect(10, yPos - 5, 4, 20, 'F');
+      doc.rect(10, yPos - 5, 4, 30, 'F');
       
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(14);
@@ -95,10 +104,26 @@ const handler = async (req: Request): Promise<Response> => {
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.text('This profile reflects your current stage in the funding readiness journey.', 20, yPos + 12);
+      doc.text(profileDetails.description, 20, yPos + 12, { maxWidth: 170 });
+      
+      doc.setFontSize(9);
+      doc.setTextColor(75, 85, 99);
+      doc.text(`Funder Perspective: ${profileDetails.funderPerspective}`, 20, yPos + 22, { maxWidth: 170 });
+
+      // Next Steps section
+      yPos += 45;
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Next Steps', 20, yPos);
+      
+      yPos += 10;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(profileDetails.nextStep, 20, yPos, { maxWidth: 170 });
 
       // Categories section
-      yPos += 35;
+      yPos += 25;
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
@@ -147,12 +172,67 @@ const handler = async (req: Request): Promise<Response> => {
         yPos += 35;
       });
 
-      // Footer
-      if (yPos > 230) {
+      // Detailed Feedback section
+      if (yPos > 200) {
         doc.addPage();
         yPos = 30;
       }
+      
+      yPos += 20;
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detailed Feedback', 20, yPos);
+      
+      yPos += 15;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      // Split detailed feedback into paragraphs and handle page breaks
+      const feedbackParagraphs = profileDetails.detailedFeedback.split('\n').filter(p => p.trim());
+      for (const paragraph of feedbackParagraphs) {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 30;
+        }
+        const lines = doc.splitTextToSize(paragraph, 170);
+        doc.text(lines, 20, yPos);
+        yPos += lines.length * 5 + 3;
+      }
+      
+      // Resources section (if available)
+      if (profileDetails.resources && profileDetails.resources.length > 0) {
+        if (yPos > 220) {
+          doc.addPage();
+          yPos = 30;
+        }
+        
+        yPos += 15;
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resources to Explore', 20, yPos);
+        
+        yPos += 10;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        
+        for (const resource of profileDetails.resources) {
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 30;
+          }
+          doc.setTextColor(30, 41, 59);
+          doc.text(`• ${resource.name}`, 25, yPos);
+          yPos += 6;
+          doc.setTextColor(59, 130, 246);
+          doc.text(resource.url, 25, yPos);
+          yPos += 10;
+        }
+      }
 
+      // Footer
+      doc.addPage();
       yPos = 270; // Bottom of page
       doc.setFillColor(248, 250, 252);
       doc.rect(0, yPos - 10, 210, 30, 'F');
@@ -169,6 +249,37 @@ const handler = async (req: Request): Promise<Response> => {
       // Generate PDF as base64
       const pdfData = doc.output('datauristring').split(',')[1];
       console.log('PDF generated successfully with jsPDF');
+
+      // Save to database if requested
+      if (saveToDatabase && answers) {
+        try {
+          const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+          const supabase = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          );
+
+          const { error: insertError } = await supabase
+            .from('assessment_results')
+            .insert({
+              email: userEmail,
+              profile: results.profile,
+              overall_percent: results.overallPercent,
+              category_scores: results.categories,
+              answers: answers,
+              pdf_data: pdfData,
+              data_storage_consent: true
+            });
+
+          if (insertError) {
+            console.error('Error saving assessment results:', insertError);
+          } else {
+            console.log('Assessment results saved successfully');
+          }
+        } catch (error) {
+          console.error('Error connecting to database:', error);
+        }
+      }
 
       return new Response(
         JSON.stringify({
