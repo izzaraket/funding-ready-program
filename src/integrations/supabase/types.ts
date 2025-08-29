@@ -14,7 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_results: {
+        Row: {
+          answers: Json
+          category_scores: Json
+          created_at: string | null
+          id: string
+          overall_percent: number
+          profile: string
+          user_id: string | null
+        }
+        Insert: {
+          answers: Json
+          category_scores: Json
+          created_at?: string | null
+          id?: string
+          overall_percent: number
+          profile: string
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json
+          category_scores?: Json
+          created_at?: string | null
+          id?: string
+          overall_percent?: number
+          profile?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scholarship_applications: {
+        Row: {
+          commitment_confirmed: boolean
+          created_at: string | null
+          id: string
+          org_name: string
+          program_summary: string
+          roadblock: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          commitment_confirmed?: boolean
+          created_at?: string | null
+          id?: string
+          org_name: string
+          program_summary: string
+          roadblock: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          commitment_confirmed?: boolean
+          created_at?: string | null
+          id?: string
+          org_name?: string
+          program_summary?: string
+          roadblock?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scholarship_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workshop_registrations: {
+        Row: {
+          contact_info: Json | null
+          created_at: string | null
+          id: string
+          organization_name: string | null
+          registration_type: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          contact_info?: Json | null
+          created_at?: string | null
+          id?: string
+          organization_name?: string | null
+          registration_type: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          contact_info?: Json | null
+          created_at?: string | null
+          id?: string
+          organization_name?: string | null
+          registration_type?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_registrations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
