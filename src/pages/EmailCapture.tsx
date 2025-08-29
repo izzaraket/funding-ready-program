@@ -45,46 +45,15 @@ const EmailCapture = () => {
 
       if (error) throw error;
 
-      // If this is a PDF request, generate and download PDF
-      if (isPDFRequest) {
-        await generateAndDownloadPDF(email);
-        sessionStorage.removeItem('requestPDF');
-        toast.success('PDF downloaded! Check your email for the magic link to view your full results.');
-      } else {
-        toast.success('Check your email for the magic link to view your results!');
-      }
+      // Always generate and download PDF, and send via email
+      await generateAndDownloadPDF(email);
+      sessionStorage.removeItem('requestPDF');
+      toast.success('PDF downloaded and sent to your email! Redirecting to workshop signup...');
       
-      // Send welcome email with assessment info
-      try {
-        const welcomeHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">Welcome to Your Funding Readiness Journey!</h1>
-            <p>Thank you for completing our funding readiness assessment. We've sent you a magic link to access your personalized results.</p>
-            <p>Once you've reviewed your results, you'll be able to:</p>
-            <ul>
-              <li>Download a detailed PDF report</li>
-              <li>Learn about our upcoming workshop</li>
-              <li>Get personalized recommendations</li>
-            </ul>
-            <p>Click the magic link in your inbox to get started!</p>
-            <p style="color: #64748b; margin-top: 30px;">
-              Best regards,<br>
-              The Funding Readiness Team
-            </p>
-          </div>
-        `;
-
-        await supabase.functions.invoke('send-email', {
-          body: {
-            to: email,
-            subject: 'Welcome! Your Funding Readiness Results Are Ready',
-            htmlContent: welcomeHtml
-          }
-        });
-      } catch (emailError) {
-        console.error('Error sending welcome email:', emailError);
-        // Don't show error to user, just log it
-      }
+      // Redirect to workshop signup after a short delay
+      setTimeout(() => {
+        navigate('/workshop-signup');
+      }, 2000);
       
     } catch (error: any) {
       console.error('Error sending magic link:', error);
@@ -97,7 +66,7 @@ const EmailCapture = () => {
   const generateAndDownloadPDF = async (userEmail: string) => {
     try {
       const savedAnswers = localStorage.getItem('funding-readiness-answers');
-      if (!savedAnswers) return;
+      if (!savedAnswers) return null;
 
       const answers = JSON.parse(savedAnswers);
       const results = calculateResults(answers);
@@ -124,9 +93,47 @@ const EmailCapture = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Send PDF via email
+      await sendPDFViaEmail(userEmail, pdfData);
+      
+      return pdfData;
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error("Failed to generate PDF. Please try again.");
+      return null;
+    }
+  };
+
+  const sendPDFViaEmail = async (userEmail: string, pdfData: string) => {
+    try {
+      const welcomeHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #6366f1;">Your Funding Readiness Results</h1>
+          <p>Thank you for completing our funding readiness assessment!</p>
+          <p>Please find your detailed PDF results attached to this email.</p>
+          <p>Next step: Join our upcoming workshop to turn these insights into a fundable package.</p>
+          <p style="color: #64748b; margin-top: 30px;">
+            Best regards,<br>
+            The Funding Readiness Team
+          </p>
+        </div>
+      `;
+
+      await supabase.functions.invoke('send-email', {
+        body: {
+          to: userEmail,
+          subject: 'Your Funding Readiness Results - PDF Attached',
+          htmlContent: welcomeHtml,
+          attachments: [{
+            filename: 'funding-readiness-results.pdf',
+            content: pdfData
+          }]
+        }
+      });
+    } catch (error) {
+      console.error('Error sending PDF email:', error);
+      // Don't show error to user, just log it
     }
   };
 
