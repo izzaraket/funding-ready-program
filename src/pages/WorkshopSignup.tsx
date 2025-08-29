@@ -159,7 +159,7 @@ const WorkshopSignup = () => {
                   variant="outline" 
                   size="lg" 
                   className="w-full"
-                  onClick={() => window.open('mailto:hello@fundingreadyworkshop.com?subject=Learn More', '_blank')}
+                  onClick={() => window.open('https://yammservices.com/funding-ready-program/', '_blank')}
                 >
                   Learn More
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -202,6 +202,15 @@ const WorkshopSignup = () => {
                   >
                     Apply for Free Spot
                     <Star className="w-4 h-4 ml-2" />
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => window.open('https://yammservices.com/funding-ready-program/', '_blank')}
+                  >
+                    Learn more
                   </Button>
                 </div>
               ) : (

@@ -223,7 +223,7 @@ const Results = () => {
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
-                  onClick={() => window.open('https://yammservices.com/funding-ready-workshop-registration/', '_blank')}
+                  onClick={() => window.open('https://yammservices.com/funding-ready-program/', '_blank')}
                   className="flex items-center space-x-2"
                 >
                   <Users className="w-4 h-4" />
@@ -232,7 +232,7 @@ const Results = () => {
                 
                 <Button 
                   variant="outline"
-                  onClick={() => window.open('mailto:hello@fundingreadyworkshop.com?subject=Workshop Questions', '_blank')}
+                  onClick={() => window.open('https://yammservices.com/contact/', '_blank')}
                   className="flex items-center space-x-2"
                 >
                   <span>Contact Us</span>
