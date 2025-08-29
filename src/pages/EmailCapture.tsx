@@ -28,8 +28,9 @@ const EmailCapture = () => {
 
     try {
       // Check if answers exist in localStorage
+      const savedResults = localStorage.getItem('funding-readiness-results');
       const savedAnswers = localStorage.getItem('funding-readiness-answers');
-      if (!savedAnswers) {
+      if (!savedResults && !savedAnswers) {
         toast.error('Please complete the assessment first.');
         navigate('/checklist');
         return;
@@ -65,11 +66,20 @@ const EmailCapture = () => {
 
   const generateAndDownloadPDF = async (userEmail: string) => {
     try {
-      const savedAnswers = localStorage.getItem('funding-readiness-answers');
-      if (!savedAnswers) return null;
-
-      const answers = JSON.parse(savedAnswers);
-      const results = calculateResults(answers);
+      // Prefer precomputed results to avoid relying on answers
+      const savedResults = localStorage.getItem('funding-readiness-results');
+      let results: any;
+      if (savedResults) {
+        results = JSON.parse(savedResults);
+      } else {
+        const savedAnswers = localStorage.getItem('funding-readiness-answers');
+        if (!savedAnswers) {
+          toast.error('Please complete the assessment first.');
+          return null;
+        }
+        const answers = JSON.parse(savedAnswers);
+        results = calculateResults(answers);
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-pdf', {
         body: { 

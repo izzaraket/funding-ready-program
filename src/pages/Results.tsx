@@ -35,11 +35,14 @@ const Results = () => {
         if (dbResults && dbResults.length > 0) {
           const result = dbResults[0];
           setAnswers(result.answers as Record<number, ScoreLevel>);
-          setResults({
+          const computedResults = {
             categories: result.category_scores as any,
             profile: result.profile as any,
             overallPercent: result.overall_percent
-          });
+          };
+          setResults(computedResults);
+          // Persist for PDF flow
+          localStorage.setItem('funding-readiness-results', JSON.stringify(computedResults));
           return;
         }
       }
@@ -55,6 +58,8 @@ const Results = () => {
       try {
         const parsedAnswers = JSON.parse(savedAnswers);
         const calculatedResults = calculateResults(parsedAnswers);
+        // Persist results locally for PDF flow
+        localStorage.setItem('funding-readiness-results', JSON.stringify(calculatedResults));
         
         // If user is authenticated, save to database
         if (user) {
@@ -67,9 +72,6 @@ const Results = () => {
               profile: calculatedResults.profile,
               overall_percent: calculatedResults.overallPercent
             });
-          
-          // Clear localStorage after saving to database
-          localStorage.removeItem('funding-readiness-answers');
         }
         
         setAnswers(parsedAnswers);
