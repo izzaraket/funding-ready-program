@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import puppeteer from "npm:puppeteer@21.0.0";
+import { jsPDF } from "npm:jspdf@3.0.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,221 +30,149 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Generating PDF for:', userEmail);
 
-    // Create enhanced HTML template for the PDF
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Funding Readiness Assessment Results</title>
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              margin: 0;
-              padding: 40px;
-              background-color: #f8fafc;
-              color: #334155;
-              line-height: 1.6;
-            }
-            .container {
-              max-width: 800px;
-              margin: 0 auto;
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-              overflow: hidden;
-            }
-            .header {
-              background: linear-gradient(135deg, #6366f1, #8b5cf6);
-              color: white;
-              padding: 40px;
-              text-align: center;
-            }
-            .header h1 {
-              margin: 0 0 10px 0;
-              font-size: 28px;
-              font-weight: 600;
-            }
-            .header p {
-              margin: 0;
-              opacity: 0.9;
-              font-size: 16px;
-            }
-            .content {
-              padding: 40px;
-            }
-            .summary {
-              text-align: center;
-              margin-bottom: 40px;
-              padding: 30px;
-              background: #f1f5f9;
-              border-radius: 8px;
-            }
-            .score-circle {
-              width: 120px;
-              height: 120px;
-              border-radius: 50%;
-              background: linear-gradient(135deg, #10b981, #059669);
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 32px;
-              font-weight: bold;
-              color: white;
-              margin-bottom: 20px;
-            }
-            .profile-section {
-              margin: 30px 0;
-              padding: 25px;
-              background: #fef3c7;
-              border-left: 4px solid #f59e0b;
-              border-radius: 0 8px 8px 0;
-            }
-            .categories {
-              margin-top: 30px;
-            }
-            .category {
-              margin-bottom: 25px;
-              padding: 20px;
-              border: 1px solid #e2e8f0;
-              border-radius: 8px;
-              background: #ffffff;
-            }
-            .category h3 {
-              margin: 0 0 10px 0;
-              color: #1e293b;
-              font-size: 18px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            }
-            .category-score {
-              font-weight: bold;
-              color: #059669;
-            }
-            .progress-bar {
-              width: 100%;
-              height: 8px;
-              background: #e2e8f0;
-              border-radius: 4px;
-              overflow: hidden;
-              margin: 10px 0;
-            }
-            .progress-fill {
-              height: 100%;
-              background: linear-gradient(90deg, #10b981, #059669);
-              transition: width 0.3s ease;
-            }
-            .footer {
-              text-align: center;
-              padding: 30px;
-              background: #f8fafc;
-              border-top: 1px solid #e2e8f0;
-              color: #64748b;
-            }
-            h2 {
-              color: #1e293b;
-              margin-bottom: 20px;
-              font-size: 24px;
-            }
-            h3 {
-              color: #1e293b;
-              margin-bottom: 15px;
-              font-size: 20px;
-            }
-            p {
-              line-height: 1.6;
-              margin-bottom: 15px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Funding Readiness Assessment</h1>
-              <p>Personalized Results for ${userEmail}</p>
-            </div>
-            
-            <div class="content">
-              <div class="summary">
-                <div class="score-circle">
-                  ${results.overallPercent}%
-                </div>
-                <h2>Overall Readiness Score</h2>
-                <p>Based on your responses across all key areas</p>
-              </div>
-
-              <div class="profile-section">
-                <h3>Your Profile: ${results.profile}</h3>
-                <p>This profile reflects your current stage in the funding readiness journey.</p>
-              </div>
-
-              <div class="categories">
-                <h2>Category Breakdown</h2>
-                ${results.categories.map(category => `
-                  <div class="category">
-                    <h3>
-                      ${category.name}
-                      <span class="category-score">${category.percent}%</span>
-                    </h3>
-                    <div class="progress-bar">
-                      <div class="progress-fill" style="width: ${category.percent}%"></div>
-                    </div>
-                    <p><strong>${category.band}</strong> readiness level</p>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>Generated on ${new Date().toLocaleDateString()}</p>
-              <p>Want to improve your funding readiness? Contact us for personalized guidance.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
     try {
-      console.log('Launching browser...');
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu'
-        ]
-      });
-
-      const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      console.log('Generating PDF with jsPDF...');
       
-      console.log('Generating PDF...');
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20px',
-          right: '20px',
-          bottom: '20px',
-          left: '20px'
-        }
+      // Create a new PDF document
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
 
-      await browser.close();
-      console.log('PDF generated successfully');
+      // Set font and colors
+      doc.setFont('helvetica');
+      
+      // Header section with gradient-like effect
+      doc.setFillColor(99, 102, 241); // Primary color
+      doc.rect(0, 0, 210, 60, 'F');
+      
+      // Header text
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Funding Readiness Assessment', 105, 25, { align: 'center' });
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Personalized Results for ${userEmail}`, 105, 40, { align: 'center' });
 
-      // Convert PDF buffer to base64
-      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+      // Overall score section
+      let yPos = 80;
+      
+      // Score circle background
+      doc.setFillColor(16, 185, 129); // Green color
+      doc.circle(105, yPos, 20, 'F');
+      
+      // Score text
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${results.overallPercent}%`, 105, yPos + 5, { align: 'center' });
+      
+      yPos += 35;
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(18);
+      doc.text('Overall Readiness Score', 105, yPos, { align: 'center' });
+      
+      yPos += 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Based on your responses across all key areas', 105, yPos, { align: 'center' });
+
+      // Profile section
+      yPos += 25;
+      doc.setFillColor(254, 243, 199); // Light yellow background
+      doc.rect(10, yPos - 5, 190, 20, 'F');
+      
+      doc.setFillColor(245, 158, 11); // Orange border
+      doc.rect(10, yPos - 5, 4, 20, 'F');
+      
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Your Profile: ${results.profile}`, 20, yPos + 5);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('This profile reflects your current stage in the funding readiness journey.', 20, yPos + 12);
+
+      // Categories section
+      yPos += 35;
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Category Breakdown', 20, yPos);
+
+      yPos += 15;
+
+      // Draw each category
+      results.categories.forEach((category, index) => {
+        if (yPos > 250) { // Add new page if needed
+          doc.addPage();
+          yPos = 30;
+        }
+
+        // Category box
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(20, yPos - 5, 170, 25, 'FD');
+
+        // Category name and score
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(category.name, 25, yPos + 3);
+        
+        doc.setTextColor(5, 150, 105);
+        doc.text(`${category.percent}%`, 180, yPos + 3, { align: 'right' });
+
+        // Progress bar background
+        doc.setFillColor(226, 232, 240);
+        doc.rect(25, yPos + 6, 140, 3, 'F');
+
+        // Progress bar fill
+        const fillWidth = (category.percent / 100) * 140;
+        doc.setFillColor(16, 185, 129);
+        doc.rect(25, yPos + 6, fillWidth, 3, 'F');
+
+        // Band text
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${category.band}`, 25, yPos + 15);
+        doc.setFont('helvetica', 'normal');
+        doc.text(' readiness level', 25 + doc.getTextWidth(category.band), yPos + 15);
+
+        yPos += 35;
+      });
+
+      // Footer
+      if (yPos > 230) {
+        doc.addPage();
+        yPos = 30;
+      }
+
+      yPos = 270; // Bottom of page
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, yPos - 10, 210, 30, 'F');
+      
+      doc.setDrawColor(226, 232, 240);
+      doc.line(0, yPos - 10, 210, yPos - 10);
+      
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, yPos, { align: 'center' });
+      doc.text('Want to improve your funding readiness? Contact us for personalized guidance.', 105, yPos + 7, { align: 'center' });
+
+      // Generate PDF as base64
+      const pdfData = doc.output('datauristring').split(',')[1];
+      console.log('PDF generated successfully with jsPDF');
 
       return new Response(
         JSON.stringify({
-          pdfData: pdfBase64,
+          pdfData,
           message: "PDF generated successfully"
         }),
         {
