@@ -55,8 +55,8 @@ const Checklist = () => {
     }
 
     // Store answers for results page
-    localStorage.setItem('funding-readiness-results', JSON.stringify(answers));
-    navigate('/results');
+      localStorage.setItem('funding-readiness-answers', JSON.stringify(answers));
+      navigate('/email-capture');
   };
 
   const handleReset = () => {

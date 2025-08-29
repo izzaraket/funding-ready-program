@@ -6,63 +6,129 @@ import BarMeter from '../components/BarMeter';
 import ProfileCard from '../components/ProfileCard';
 import { calculateResults } from '../lib/scoring';
 import type { ScoreLevel, AssessmentResult } from '../lib/scoring';
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw, Users, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Results = () => {
   const navigate = useNavigate();
   const [results, setResults] = useState<AssessmentResult | null>(null);
   const [answers, setAnswers] = useState<Record<number, ScoreLevel> | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [isLoadingPDF, setIsLoadingPDF] = useState(false);
 
   useEffect(() => {
-    const savedAnswers = localStorage.getItem('funding-readiness-results');
-    
-    if (!savedAnswers) {
-      // No results data, redirect to checklist
-      navigate('/checklist');
-      return;
-    }
-
-    try {
-      const parsedAnswers = JSON.parse(savedAnswers);
-      const calculatedResults = calculateResults(parsedAnswers);
+    const checkAuthAndLoadResults = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       
-      setAnswers(parsedAnswers);
-      setResults(calculatedResults);
-    } catch (error) {
-      console.error('Error loading results:', error);
-      toast.error('Error loading results. Please try the assessment again.');
-      navigate('/checklist');
-    }
-  }, [navigate]);
+      if (!user) {
+        // Check if we have localStorage answers to redirect to email capture
+        const savedAnswers = localStorage.getItem('funding-readiness-answers');
+        if (savedAnswers) {
+          navigate('/email-capture');
+        } else {
+          navigate('/checklist');
+        }
+        return;
+      }
 
-  const handleExport = () => {
-    if (!results || !answers) return;
+      setUser(user);
 
-    const exportData = {
-      timestamp: new Date().toISOString(),
-      answers,
-      results: {
-        categories: results.categories,
-        profile: results.profile,
-        overallPercent: results.overallPercent
+      // Try to load results from database first
+      const { data: dbResults } = await supabase
+        .from('assessment_results')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (dbResults && dbResults.length > 0) {
+        const result = dbResults[0];
+        setAnswers(result.answers as Record<number, ScoreLevel>);
+        setResults({
+          categories: result.category_scores as any,
+          profile: result.profile as any,
+          overallPercent: result.overall_percent
+        });
+      } else {
+        // Check localStorage for answers to calculate and save
+        const savedAnswers = localStorage.getItem('funding-readiness-answers');
+        
+        if (!savedAnswers) {
+          navigate('/checklist');
+          return;
+        }
+
+        try {
+          const parsedAnswers = JSON.parse(savedAnswers);
+          const calculatedResults = calculateResults(parsedAnswers);
+          
+          // Save to database
+          await supabase
+            .from('assessment_results')
+            .insert({
+              user_id: user.id,
+              answers: parsedAnswers as any,
+              category_scores: calculatedResults.categories as any,
+              profile: calculatedResults.profile,
+              overall_percent: calculatedResults.overallPercent
+            });
+          
+          setAnswers(parsedAnswers);
+          setResults(calculatedResults);
+          
+          // Clear localStorage after saving to database
+          localStorage.removeItem('funding-readiness-answers');
+          localStorage.removeItem('funding-readiness-results');
+        } catch (error) {
+          console.error('Error loading results:', error);
+          toast.error('Error loading results. Please try the assessment again.');
+          navigate('/checklist');
+        }
       }
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json'
-    });
-    
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `funding-readiness-results-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success('Results downloaded successfully!');
+    checkAuthAndLoadResults();
+  }, [navigate]);
+
+  const handleExportPDF = async () => {
+    if (!results || !user) return;
+    setIsLoadingPDF(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-pdf', {
+        body: {
+          results,
+          userEmail: user.email
+        }
+      });
+
+      if (error) throw error;
+
+      // Create and download the PDF
+      const blob = new Blob([new Uint8Array(data.pdf)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `funding-readiness-results-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('PDF downloaded successfully!');
+      
+      // Redirect to workshop signup after download
+      setTimeout(() => {
+        navigate('/workshop-signup');
+      }, 1500);
+      
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsLoadingPDF(false);
+    }
   };
 
   const handleStartOver = () => {
@@ -73,28 +139,45 @@ const Results = () => {
     }
   };
 
-  if (!results) {
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem('funding-readiness-answers');
+    localStorage.removeItem('funding-readiness-results');
+    navigate('/');
+  };
+
+  if (!results || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your results...</p>
+          <p className="text-muted-foreground">Loading your results...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-card border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Your Funding Readiness Snapshot
-          </h1>
-          <p className="text-gray-600">
-            Here's how your program scores across four key areas, plus your personalized profile and next steps.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Your Funding Readiness Snapshot
+              </h1>
+              <p className="text-muted-foreground">
+                Here's how your program scores across four key areas, plus your personalized profile and next steps.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Signed in as: {user.email}
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -102,8 +185,8 @@ const Results = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Category Scores */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-2xl font-semibold text-card-foreground mb-6">
                 Category Scores
               </h2>
               
@@ -118,9 +201,9 @@ const Results = () => {
                 ))}
               </div>
 
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="mt-6 p-4 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">Overall Readiness</span>
+                  <span className="font-medium text-card-foreground">Overall Readiness</span>
                   <span className="text-2xl font-bold text-primary">
                     {results.overallPercent}%
                   </span>
@@ -129,15 +212,23 @@ const Results = () => {
             </div>
 
             {/* Actions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                What's Next?
+            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+              <h3 className="text-lg font-semibold text-card-foreground mb-4">
+                Export & Next Steps
               </h3>
               
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button onClick={handleExport} className="flex items-center space-x-2">
-                  <Download className="w-4 h-4" />
-                  <span>Export Results (JSON)</span>
+                <Button 
+                  onClick={handleExportPDF} 
+                  disabled={isLoadingPDF}
+                  className="flex items-center space-x-2"
+                >
+                  {isLoadingPDF ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  <span>{isLoadingPDF ? 'Generating PDF...' : 'Download Results (PDF)'}</span>
                 </Button>
                 
                 <Button variant="outline" onClick={handleStartOver} className="flex items-center space-x-2">
@@ -146,9 +237,38 @@ const Results = () => {
                 </Button>
               </div>
               
-              <p className="text-sm text-gray-500 mt-3">
-                Export your results to save them locally or share with your team.
+              <p className="text-sm text-muted-foreground mt-3">
+                Download your PDF results and get redirected to learn about our funding workshop.
               </p>
+            </div>
+
+            {/* Workshop CTA */}
+            <div className="bg-primary/5 rounded-xl border border-primary/20 p-6">
+              <h3 className="text-lg font-semibold text-card-foreground mb-3">
+                Ready to Take Action?
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Turn your assessment insights into a fundable package with our intensive 4-session workshop.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={() => navigate('/workshop-signup')}
+                  className="flex items-center space-x-2"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Learn About Workshop</span>
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open('mailto:hello@fundingreadyworkshop.com?subject=Workshop Questions', '_blank')}
+                  className="flex items-center space-x-2"
+                >
+                  <span>Contact Us</span>
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
 

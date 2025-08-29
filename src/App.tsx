@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Checklist from "./pages/Checklist";
 import Results from "./pages/Results";
+import EmailCapture from "./pages/EmailCapture";
+import WorkshopSignup from "./pages/WorkshopSignup";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
@@ -21,7 +23,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/checklist" element={<Checklist />} />
+          <Route path="/email-capture" element={<EmailCapture />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/workshop-signup" element={<WorkshopSignup />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
