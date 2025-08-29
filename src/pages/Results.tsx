@@ -86,56 +86,10 @@ const Results = () => {
   }, [navigate]);
 
   const handleExportPDF = async () => {
-    if (!results) return;
-    
-    // If user is not authenticated, redirect to email capture
-    if (!user) {
-      navigate('/email-capture');
-      return;
-    }
-    
-    setIsLoadingPDF(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-pdf', {
-        body: {
-          results,
-          userEmail: user.email
-        }
-      });
-
-      if (error) throw error;
-
-      // Convert base64 to blob and download
-      const binaryString = atob(data.pdfData);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: 'application/pdf' });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `funding-readiness-results-${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast.success('PDF downloaded successfully!');
-      
-      // Redirect to workshop signup after download
-      setTimeout(() => {
-        navigate('/workshop-signup');
-      }, 1500);
-      
-    } catch (error: any) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsLoadingPDF(false);
-    }
+    // Always redirect to email capture for PDF download
+    // Store PDF request intent in sessionStorage
+    sessionStorage.setItem('requestPDF', 'true');
+    navigate('/email-capture');
   };
 
   const handleStartOver = () => {

@@ -1,16 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, ArrowRight } from 'lucide-react';
+import { Mail, ArrowRight, Download } from 'lucide-react';
+import { calculateResults } from '@/lib/scoring';
 
 const EmailCapture = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPDFRequest, setIsPDFRequest] = useState(false);
+
+  useEffect(() => {
+    // Check if this is a PDF download request
+    const pdfRequest = sessionStorage.getItem('requestPDF');
+    if (pdfRequest === 'true') {
+      setIsPDFRequest(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +45,14 @@ const EmailCapture = () => {
 
       if (error) throw error;
 
-      toast.success('Check your email for the magic link to view your results!');
+      // If this is a PDF request, generate and download PDF
+      if (isPDFRequest) {
+        await generateAndDownloadPDF(email);
+        sessionStorage.removeItem('requestPDF');
+        toast.success('PDF downloaded! Check your email for the magic link to view your full results.');
+      } else {
+        toast.success('Check your email for the magic link to view your results!');
+      }
       
       // Send welcome email with assessment info
       try {
@@ -77,6 +94,42 @@ const EmailCapture = () => {
     }
   };
 
+  const generateAndDownloadPDF = async (userEmail: string) => {
+    try {
+      const savedAnswers = localStorage.getItem('funding-readiness-answers');
+      if (!savedAnswers) return;
+
+      const answers = JSON.parse(savedAnswers);
+      const results = calculateResults(answers);
+
+      const { data, error } = await supabase.functions.invoke('generate-pdf', {
+        body: { 
+          results,
+          userEmail
+        }
+      });
+
+      if (error) throw error;
+
+      // Decode base64 PDF data and download
+      const pdfData = data.pdfData;
+      const byteArray = Uint8Array.from(atob(pdfData), c => c.charCodeAt(0));
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'funding-readiness-results.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Failed to generate PDF. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -95,13 +148,20 @@ const EmailCapture = () => {
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="text-center mb-6">
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-6 h-6 text-primary" />
+              {isPDFRequest ? (
+                <Download className="w-6 h-6 text-primary" />
+              ) : (
+                <Mail className="w-6 h-6 text-primary" />
+              )}
             </div>
             <h2 className="text-xl font-semibold text-card-foreground mb-2">
-              Almost There!
+              {isPDFRequest ? 'Download Your PDF Results' : 'Almost There!'}
             </h2>
             <p className="text-muted-foreground text-sm">
-              We'll send you a secure link to view your personalized funding readiness results.
+              {isPDFRequest 
+                ? 'Enter your email to download your PDF results and get access to your full assessment.' 
+                : 'We\'ll send you a secure link to view your personalized funding readiness results.'
+              }
             </p>
           </div>
 
@@ -131,7 +191,7 @@ const EmailCapture = () => {
                 </>
               ) : (
                 <>
-                  Get My Results
+                  {isPDFRequest ? 'Download PDF Results' : 'Get My Results'}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
