@@ -56,7 +56,7 @@ const Checklist = () => {
 
     // Store answers for results page
       localStorage.setItem('funding-readiness-answers', JSON.stringify(answers));
-      navigate('/email-capture');
+      navigate('/results');
   };
 
   const handleReset = () => {

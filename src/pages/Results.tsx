@@ -18,52 +18,46 @@ const Results = () => {
   const [isLoadingPDF, setIsLoadingPDF] = useState(false);
 
   useEffect(() => {
-    const checkAuthAndLoadResults = async () => {
+    const loadResults = async () => {
+      // Check for auth user first
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // Check if we have localStorage answers to redirect to email capture
-        const savedAnswers = localStorage.getItem('funding-readiness-answers');
-        if (savedAnswers) {
-          navigate('/email-capture');
-        } else {
-          navigate('/checklist');
+      setUser(user);
+
+      // If user is authenticated, try to load from database
+      if (user) {
+        const { data: dbResults } = await supabase
+          .from('assessment_results')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (dbResults && dbResults.length > 0) {
+          const result = dbResults[0];
+          setAnswers(result.answers as Record<number, ScoreLevel>);
+          setResults({
+            categories: result.category_scores as any,
+            profile: result.profile as any,
+            overallPercent: result.overall_percent
+          });
+          return;
         }
+      }
+
+      // Check localStorage for answers (for both auth and non-auth users)
+      const savedAnswers = localStorage.getItem('funding-readiness-answers');
+      
+      if (!savedAnswers) {
+        navigate('/checklist');
         return;
       }
 
-      setUser(user);
-
-      // Try to load results from database first
-      const { data: dbResults } = await supabase
-        .from('assessment_results')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (dbResults && dbResults.length > 0) {
-        const result = dbResults[0];
-        setAnswers(result.answers as Record<number, ScoreLevel>);
-        setResults({
-          categories: result.category_scores as any,
-          profile: result.profile as any,
-          overallPercent: result.overall_percent
-        });
-      } else {
-        // Check localStorage for answers to calculate and save
-        const savedAnswers = localStorage.getItem('funding-readiness-answers');
+      try {
+        const parsedAnswers = JSON.parse(savedAnswers);
+        const calculatedResults = calculateResults(parsedAnswers);
         
-        if (!savedAnswers) {
-          navigate('/checklist');
-          return;
-        }
-
-        try {
-          const parsedAnswers = JSON.parse(savedAnswers);
-          const calculatedResults = calculateResults(parsedAnswers);
-          
-          // Save to database
+        // If user is authenticated, save to database
+        if (user) {
           await supabase
             .from('assessment_results')
             .insert({
@@ -74,25 +68,32 @@ const Results = () => {
               overall_percent: calculatedResults.overallPercent
             });
           
-          setAnswers(parsedAnswers);
-          setResults(calculatedResults);
-          
           // Clear localStorage after saving to database
           localStorage.removeItem('funding-readiness-answers');
-          localStorage.removeItem('funding-readiness-results');
-        } catch (error) {
-          console.error('Error loading results:', error);
-          toast.error('Error loading results. Please try the assessment again.');
-          navigate('/checklist');
         }
+        
+        setAnswers(parsedAnswers);
+        setResults(calculatedResults);
+        
+      } catch (error) {
+        console.error('Error loading results:', error);
+        toast.error('Error loading results. Please try the assessment again.');
+        navigate('/checklist');
       }
     };
 
-    checkAuthAndLoadResults();
+    loadResults();
   }, [navigate]);
 
   const handleExportPDF = async () => {
-    if (!results || !user) return;
+    if (!results) return;
+    
+    // If user is not authenticated, redirect to email capture
+    if (!user) {
+      navigate('/email-capture');
+      return;
+    }
+    
     setIsLoadingPDF(true);
 
     try {
@@ -146,7 +147,7 @@ const Results = () => {
     navigate('/');
   };
 
-  if (!results || !user) {
+  if (!results) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -170,13 +171,17 @@ const Results = () => {
               <p className="text-muted-foreground">
                 Here's how your program scores across four key areas, plus your personalized profile and next steps.
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Signed in as: {user.email}
-              </p>
+              {user && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Signed in as: {user.email}
+                </p>
+              )}
             </div>
-            <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
-            </Button>
+            {user && (
+              <Button variant="outline" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -238,7 +243,10 @@ const Results = () => {
               </div>
               
               <p className="text-sm text-muted-foreground mt-3">
-                Download your PDF results and get redirected to learn about our funding workshop.
+                {user ? 
+                  'Download your PDF results and get redirected to learn about our funding workshop.' :
+                  'Sign in with your email to download PDF results and learn about our funding workshop.'
+                }
               </p>
             </div>
 
