@@ -259,17 +259,21 @@ const handler = async (req: Request): Promise<Response> => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
           );
 
+          // Ensure integer for overall_percent and reflect consent
+          const overallPercentInt = Math.round(Number(results.overallPercent ?? 0));
+          const payload = {
+            email: userEmail,
+            profile: results.profile,
+            overall_percent: isNaN(overallPercentInt) ? 0 : overallPercentInt,
+            category_scores: results.categories,
+            answers: answers,
+            pdf_data: pdfData,
+            data_storage_consent: !!saveToDatabase,
+          };
+
           const { error: insertError } = await supabase
             .from('assessment_results')
-            .insert({
-              email: userEmail,
-              profile: results.profile,
-              overall_percent: results.overallPercent,
-              category_scores: results.categories,
-              answers: answers,
-              pdf_data: pdfData,
-              data_storage_consent: true
-            });
+            .insert(payload);
 
           if (insertError) {
             console.error('Error saving assessment results:', insertError);
