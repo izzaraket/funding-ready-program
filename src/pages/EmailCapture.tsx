@@ -37,6 +37,38 @@ const EmailCapture = () => {
 
       toast.success('Check your email for the magic link to view your results!');
       
+      // Send welcome email with assessment info
+      try {
+        const welcomeHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #6366f1;">Welcome to Your Funding Readiness Journey!</h1>
+            <p>Thank you for completing our funding readiness assessment. We've sent you a magic link to access your personalized results.</p>
+            <p>Once you've reviewed your results, you'll be able to:</p>
+            <ul>
+              <li>Download a detailed PDF report</li>
+              <li>Learn about our upcoming workshop</li>
+              <li>Get personalized recommendations</li>
+            </ul>
+            <p>Click the magic link in your inbox to get started!</p>
+            <p style="color: #64748b; margin-top: 30px;">
+              Best regards,<br>
+              The Funding Readiness Team
+            </p>
+          </div>
+        `;
+
+        await supabase.functions.invoke('send-email', {
+          body: {
+            to: email,
+            subject: 'Welcome! Your Funding Readiness Results Are Ready',
+            htmlContent: welcomeHtml
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
+        // Don't show error to user, just log it
+      }
+      
     } catch (error: any) {
       console.error('Error sending magic link:', error);
       toast.error(error.message || 'Something went wrong. Please try again.');
