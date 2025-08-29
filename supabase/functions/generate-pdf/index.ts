@@ -279,6 +279,21 @@ const handler = async (req: Request): Promise<Response> => {
             console.error('Error saving assessment results:', insertError);
           } else {
             console.log('Assessment results saved successfully');
+
+            // Also update the email_captures table to link it to this assessment
+            const { error: updateError } = await supabase
+              .from('email_captures')
+              .update({ 
+                assessment_result_id: payload.email // Using email as identifier since we don't have the ID
+              })
+              .eq('email', userEmail)
+              .eq('source', 'email_capture_page')
+              .order('captured_at', { ascending: false })
+              .limit(1);
+
+            if (updateError) {
+              console.error('Error linking email capture to assessment:', updateError);
+            }
           }
         } catch (error) {
           console.error('Error connecting to database:', error);

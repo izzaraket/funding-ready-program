@@ -61,6 +61,42 @@ export type Database = {
           },
         ]
       }
+      email_captures: {
+        Row: {
+          assessment_result_id: string | null
+          captured_at: string
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          source: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assessment_result_id?: string | null
+          captured_at?: string
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assessment_result_id?: string | null
+          captured_at?: string
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       scholarship_applications: {
         Row: {
           commitment_confirmed: boolean

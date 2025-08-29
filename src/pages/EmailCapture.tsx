@@ -39,6 +39,9 @@ const EmailCapture = () => {
         return;
       }
 
+      // Always capture email first (regardless of consent)
+      await captureEmail(email);
+
       // Sign up or sign in with email (magic link)
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
@@ -64,6 +67,27 @@ const EmailCapture = () => {
       toast.error(error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const captureEmail = async (userEmail: string) => {
+    try {
+      // Store email capture record (always, regardless of consent)
+      const { error } = await supabase.functions.invoke('capture-email', {
+        body: {
+          email: userEmail,
+          source: 'email_capture_page',
+          userAgent: navigator.userAgent
+        }
+      });
+
+      if (error) {
+        console.error('Error capturing email:', error);
+        // Don't block the flow if email capture fails
+      }
+    } catch (error) {
+      console.error('Error in captureEmail:', error);
+      // Don't block the flow if email capture fails
     }
   };
 
