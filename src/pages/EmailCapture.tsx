@@ -53,7 +53,7 @@ const EmailCapture = () => {
       
       // Redirect to workshop signup after a short delay
       setTimeout(() => {
-        navigate('/workshop-signup');
+        window.location.href = 'https://yammservices.com/funding-ready-workshop-registration/';
       }, 2000);
       
     } catch (error: any) {

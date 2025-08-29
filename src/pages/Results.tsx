@@ -223,7 +223,7 @@ const Results = () => {
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
-                  onClick={() => navigate('/workshop-signup')}
+                  onClick={() => window.open('https://yammservices.com/funding-ready-workshop-registration/', '_blank')}
                   className="flex items-center space-x-2"
                 >
                   <Users className="w-4 h-4" />

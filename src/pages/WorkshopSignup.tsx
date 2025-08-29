@@ -149,7 +149,7 @@ const WorkshopSignup = () => {
                 <Button 
                   size="lg" 
                   className="w-full"
-                  onClick={() => window.open('mailto:hello@fundingreadyworkshop.com?subject=Workshop Registration', '_blank')}
+                  onClick={() => window.open('https://yammservices.com/funding-ready-workshop-registration/', '_blank')}
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Register for Workshop
@@ -198,7 +198,7 @@ const WorkshopSignup = () => {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => setShowScholarshipForm(true)}
+                    onClick={() => window.open('https://yammservices.com/funding-ready-workshop-registration/', '_blank')}
                   >
                     Apply for Free Spot
                     <Star className="w-4 h-4 ml-2" />
