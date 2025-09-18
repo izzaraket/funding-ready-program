@@ -167,7 +167,7 @@ export type Database = {
           organization_name: string | null
           registration_type: string
           status: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           contact_info?: Json | null
@@ -176,7 +176,7 @@ export type Database = {
           organization_name?: string | null
           registration_type: string
           status?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           contact_info?: Json | null
@@ -185,7 +185,7 @@ export type Database = {
           organization_name?: string | null
           registration_type?: string
           status?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
