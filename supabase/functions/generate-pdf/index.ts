@@ -271,9 +271,11 @@ const handler = async (req: Request): Promise<Response> => {
             data_storage_consent: !!saveToDatabase,
           };
 
-          const { error: insertError } = await supabase
+          const { data: insertedData, error: insertError } = await supabase
             .from('assessment_results')
-            .insert(payload);
+            .insert(payload)
+            .select()
+            .single();
 
           if (insertError) {
             console.error('Error saving assessment results:', insertError);
@@ -284,7 +286,7 @@ const handler = async (req: Request): Promise<Response> => {
             const { error: updateError } = await supabase
               .from('email_captures')
               .update({ 
-                assessment_result_id: payload.email // Using email as identifier since we don't have the ID
+                assessment_result_id: insertedData.id
               })
               .eq('email', userEmail)
               .eq('source', 'email_capture_page')
