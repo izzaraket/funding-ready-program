@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending email to:', to);
 
     const emailPayload: any = {
-      from: "Funding Assessment <onboarding@resend.dev>",
+      from: "Funding Readiness Checklist <info@yammservices.com>",
       to: [to],
       subject,
       html: htmlContent,
