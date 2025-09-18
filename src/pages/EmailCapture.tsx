@@ -39,17 +39,10 @@ const EmailCapture = () => {
         return;
       }
 
-      // Sign up or sign in with email (magic link)
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/results`
-        }
-      });
+      // Always capture email first (regardless of consent)
+      await captureEmail(email);
 
-      if (error) throw error;
-
-      // Always generate and download PDF, and send via email
+      // Generate and download PDF, and send via email (no email verification needed)
       await generateAndDownloadPDF(email, consentToSaveData);
       sessionStorage.removeItem('requestPDF');
       toast.success('PDF downloaded and sent to your email! Redirecting to workshop signup...');
@@ -60,10 +53,31 @@ const EmailCapture = () => {
       }, 2000);
       
     } catch (error: any) {
-      console.error('Error sending magic link:', error);
+      console.error('Error processing request:', error);
       toast.error(error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const captureEmail = async (userEmail: string) => {
+    try {
+      // Store email capture record (always, regardless of consent)
+      const { error } = await supabase.functions.invoke('capture-email', {
+        body: {
+          email: userEmail,
+          source: 'email_capture_page',
+          userAgent: navigator.userAgent
+        }
+      });
+
+      if (error) {
+        console.error('Error capturing email:', error);
+        // Don't block the flow if email capture fails
+      }
+    } catch (error) {
+      console.error('Error in captureEmail:', error);
+      // Don't block the flow if email capture fails
     }
   };
 

@@ -61,6 +61,42 @@ export type Database = {
           },
         ]
       }
+      email_captures: {
+        Row: {
+          assessment_result_id: string | null
+          captured_at: string
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          source: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assessment_result_id?: string | null
+          captured_at?: string
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assessment_result_id?: string | null
+          captured_at?: string
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       scholarship_applications: {
         Row: {
           commitment_confirmed: boolean
@@ -131,7 +167,7 @@ export type Database = {
           organization_name: string | null
           registration_type: string
           status: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           contact_info?: Json | null
@@ -140,7 +176,7 @@ export type Database = {
           organization_name?: string | null
           registration_type: string
           status?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           contact_info?: Json | null
@@ -149,7 +185,7 @@ export type Database = {
           organization_name?: string | null
           registration_type?: string
           status?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
