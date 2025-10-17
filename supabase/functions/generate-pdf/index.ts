@@ -6,6 +6,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Email validation
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 255;
+
+function validateEmail(email: string): { valid: boolean; error?: string } {
+  if (!email || typeof email !== 'string') {
+    return { valid: false, error: 'Email is required' };
+  }
+  
+  const trimmedEmail = email.trim();
+  
+  if (trimmedEmail.length === 0) {
+    return { valid: false, error: 'Email cannot be empty' };
+  }
+  
+  if (trimmedEmail.length > MAX_EMAIL_LENGTH) {
+    return { valid: false, error: `Email must be less than ${MAX_EMAIL_LENGTH} characters` };
+  }
+  
+  if (!EMAIL_REGEX.test(trimmedEmail)) {
+    return { valid: false, error: 'Invalid email format' };
+  }
+  
+  return { valid: true };
+}
+
+// Simple rate limiting by IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 3; // Lower limit for PDF generation (resource intensive)
+
+function checkRateLimit(ipAddress: string): { allowed: boolean; error?: string } {
+  const now = Date.now();
+  const record = rateLimitMap.get(ipAddress);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ipAddress, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true };
+  }
+  
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+    return { allowed: false, error: 'Too many requests. Please try again later.' };
+  }
+  
+  record.count++;
+  return { allowed: true };
+}
+
 interface PDFRequest {
   results: {
     categories: Array<{
@@ -35,9 +83,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { results, profileDetails, userEmail, saveToDatabase, answers }: PDFRequest = await req.json();
+    const { results, profileDetails, userEmail, saveToDatabase = false, answers }: PDFRequest = await req.json();
+    
+    // Get client IP address
+    const ipAddress = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
 
-    console.log('Generating PDF for:', userEmail);
+    // Check rate limit
+    const rateLimitCheck = checkRateLimit(ipAddress);
+    if (!rateLimitCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: rateLimitCheck.error }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    // Validate email
+    const emailValidation = validateEmail(userEmail);
+    if (!emailValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: emailValidation.error }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    const sanitizedEmail = userEmail.trim().toLowerCase();
+    console.log('Generating PDF for validated email');
 
     try {
       console.log('Generating PDF with jsPDF...');
@@ -262,7 +340,7 @@ const handler = async (req: Request): Promise<Response> => {
           // Ensure integer for overall_percent and reflect consent
           const overallPercentInt = Math.round(Number(results.overallPercent ?? 0));
           const payload = {
-            email: userEmail,
+            email: sanitizedEmail,
             profile: results.profile,
             overall_percent: isNaN(overallPercentInt) ? 0 : overallPercentInt,
             category_scores: results.categories,
@@ -288,7 +366,7 @@ const handler = async (req: Request): Promise<Response> => {
               .update({ 
                 assessment_result_id: insertedData.id
               })
-              .eq('email', userEmail)
+              .eq('email', sanitizedEmail)
               .eq('source', 'email_capture_page')
               .order('captured_at', { ascending: false })
               .limit(1);

@@ -9,6 +9,11 @@ import { Mail, ArrowRight, Download } from 'lucide-react';
 import { calculateResults } from '@/lib/scoring';
 import { PROFILE_COPY } from '@/lib/copy';
 import { Checkbox } from '@/components/ui/checkbox';
+import { z } from 'zod';
+
+const emailSchema = z.object({
+  email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" })
+});
 
 const EmailCapture = () => {
   const navigate = useNavigate();
@@ -30,6 +35,16 @@ const EmailCapture = () => {
     setIsLoading(true);
 
     try {
+      // Validate email
+      const validation = emailSchema.safeParse({ email: email.trim() });
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        setIsLoading(false);
+        return;
+      }
+      
+      const validatedEmail = validation.data.email;
+      
       // Check if answers exist in localStorage
       const savedResults = localStorage.getItem('funding-readiness-results');
       const savedAnswers = localStorage.getItem('funding-readiness-answers');
@@ -40,10 +55,10 @@ const EmailCapture = () => {
       }
 
       // Always capture email first (regardless of consent)
-      await captureEmail(email);
+      await captureEmail(validatedEmail);
 
       // Generate and download PDF, and send via email (no email verification needed)
-      await generateAndDownloadPDF(email, consentToSaveData);
+      await generateAndDownloadPDF(validatedEmail, consentToSaveData);
       sessionStorage.removeItem('requestPDF');
       toast.success('PDF downloaded and sent to your email! Redirecting to workshop signup...');
       
