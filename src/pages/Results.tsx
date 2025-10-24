@@ -16,12 +16,20 @@ const Results = () => {
   const [answers, setAnswers] = useState<Record<number, ScoreLevel> | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isLoadingPDF, setIsLoadingPDF] = useState(false);
+  const [showFullResults, setShowFullResults] = useState(false);
 
   useEffect(() => {
     const loadResults = async () => {
       // Check for auth user first
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+
+      // Check if they've already provided email (returned from email capture)
+      const hasProvidedEmail = sessionStorage.getItem('emailProvided');
+      if (hasProvidedEmail === 'true') {
+        setShowFullResults(true);
+        sessionStorage.removeItem('emailProvided');
+      }
 
       // If user is authenticated, try to load from database
       if (user) {
@@ -179,38 +187,40 @@ const Results = () => {
             </div>
 
             {/* Actions */}
-            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-              <h3 className="text-lg font-semibold text-card-foreground mb-4">
-                Export & Next Steps
-              </h3>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  onClick={handleExportPDF} 
-                  disabled={isLoadingPDF}
-                  className="flex items-center space-x-2"
-                >
-                  {isLoadingPDF ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  <span>{isLoadingPDF ? 'Generating PDF...' : 'Download Results (PDF)'}</span>
-                </Button>
+            {!showFullResults && (
+              <div className="bg-primary/5 rounded-xl border border-primary/20 p-6">
+                <h3 className="text-lg font-semibold text-card-foreground mb-3">
+                  📧 Get Your Full Results
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Enter your email to unlock detailed feedback, funder perspective, personalized recommendations, and download your comprehensive PDF report.
+                </p>
                 
-                <Button variant="outline" onClick={handleStartOver} className="flex items-center space-x-2">
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Start Over</span>
+                <Button 
+                  onClick={handleExportPDF}
+                  size="lg"
+                  className="w-full"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Get Full Results & PDF
                 </Button>
               </div>
-              
-              <p className="text-sm text-muted-foreground mt-3">
-                {user ? 
-                  'Download your PDF results and get redirected to learn about our funding workshop.' :
-                  'Sign in with your email to download PDF results and learn about our funding workshop.'
-                }
-              </p>
-            </div>
+            )}
+
+            {showFullResults && (
+              <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">
+                  Actions
+                </h3>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button variant="outline" onClick={handleStartOver} className="flex items-center space-x-2">
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Start Over</span>
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Workshop CTA */}
             <div className="bg-primary/5 rounded-xl border border-primary/20 p-6">
@@ -244,7 +254,7 @@ const Results = () => {
 
           {/* Profile Card */}
           <div className="lg:col-span-1">
-            <ProfileCard profile={results.profile} />
+            <ProfileCard profile={results.profile} summaryOnly={!showFullResults} />
           </div>
         </div>
       </div>

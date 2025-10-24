@@ -7,10 +7,44 @@ import { ExternalLink } from 'lucide-react';
 
 interface ProfileCardProps {
   profile: ProfileKey;
+  summaryOnly?: boolean;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ profile, summaryOnly = false }) => {
   const profileInfo = PROFILE_COPY[profile];
+
+  if (summaryOnly) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl">
+            Your Profile: {profile}
+          </CardTitle>
+          <CardDescription className="text-lg">
+            {profileInfo.description}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Next Step Preview */}
+          <div className="bg-primary/5 rounded-lg p-4">
+            <h4 className="font-semibold text-primary mb-2">Next Step</h4>
+            <p className="text-gray-700">{profileInfo.nextStep}</p>
+          </div>
+
+          {/* Teaser */}
+          <div className="bg-muted rounded-lg p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-3">
+              Want to see your detailed feedback, funder perspective, resources, and personalized recommendations?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Enter your email to unlock your full results and get a downloadable PDF.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">

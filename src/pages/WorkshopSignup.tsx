@@ -136,11 +136,11 @@ const WorkshopSignup = () => {
                 </div>
                 
                 <div className="text-4xl font-bold text-primary mb-2">$2,400</div>
-                <p className="text-muted-foreground">per organization (2-3 participants)</p>
+                <p className="text-muted-foreground">per program (2-3 participants)</p>
                 
                 <div className="mt-4 p-3 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    💡 <strong>Partnership Discount:</strong> Two organizations can team up on a collaborative program and split the costs!
+                    💡 <strong>Partnership Discount:</strong> Two programs can team up on a collaborative initiative and split the costs!
                   </p>
                 </div>
               </div>
@@ -180,7 +180,7 @@ const WorkshopSignup = () => {
                 </Badge>
                 
                 <p className="text-muted-foreground mb-4">
-                  We're offering two full scholarships to organizations that demonstrate commitment and need.
+                  We're offering two full scholarships to programs that demonstrate commitment and need.
                 </p>
               </div>
 
@@ -216,7 +216,7 @@ const WorkshopSignup = () => {
               ) : (
                 <form onSubmit={handleScholarshipSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="orgName">Organization Name</Label>
+                    <Label htmlFor="orgName">Program Name</Label>
                     <Input
                       id="orgName"
                       value={scholarshipData.orgName}

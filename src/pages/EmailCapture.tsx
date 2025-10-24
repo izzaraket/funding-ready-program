@@ -57,14 +57,21 @@ const EmailCapture = () => {
       // Always capture email first (regardless of consent)
       await captureEmail(validatedEmail);
 
+      // Send confirmation email first
+      await sendConfirmationEmail(validatedEmail);
+      
       // Generate and download PDF, and send via email (no email verification needed)
       await generateAndDownloadPDF(validatedEmail, consentToSaveData);
       sessionStorage.removeItem('requestPDF');
-      toast.success('PDF downloaded and sent to your email! Redirecting to workshop signup...');
       
-      // Redirect to workshop signup after a short delay
+      // Mark that email was provided for full results access
+      sessionStorage.setItem('emailProvided', 'true');
+      
+      toast.success('Check your email! Redirecting back to your full results...');
+      
+      // Redirect back to results page to show full details
       setTimeout(() => {
-        navigate('/workshop-signup');
+        navigate('/results');
       }, 2000);
       
     } catch (error: any) {
@@ -163,17 +170,39 @@ const EmailCapture = () => {
     }
   };
 
-  const sendPDFViaEmail = async (userEmail: string, pdfData: string) => {
+  const sendConfirmationEmail = async (userEmail: string) => {
     try {
-      const welcomeHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #6366f1;">Your Funding Readiness Results</h1>
-          <p>Thank you for completing our funding readiness assessment!</p>
-          <p>Please find your detailed PDF results attached to this email.</p>
-          <p>Next step: Join our upcoming workshop to turn these insights into a fundable package.</p>
-          <p style="color: #64748b; margin-top: 30px;">
+      const confirmationHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #6366f1; font-size: 24px; margin-bottom: 20px;">Welcome to Your Funding Readiness Journey! 🎉</h1>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #334155;">
+            Thank you for completing our funding readiness assessment! We're excited to support you on your path to securing funding for your program.
+          </p>
+          
+          <div style="background: #f1f5f9; border-left: 4px solid #6366f1; padding: 16px; margin: 24px 0;">
+            <h2 style="color: #1e293b; font-size: 18px; margin: 0 0 12px 0;">✅ What's Next</h2>
+            <ul style="margin: 0; padding-left: 20px; color: #475569;">
+              <li style="margin-bottom: 8px;">Your detailed PDF results are on their way in a separate email</li>
+              <li style="margin-bottom: 8px;">Review your personalized profile and recommendations</li>
+              <li style="margin-bottom: 8px;">Check out our Funding-Ready Workshop to turn insights into action</li>
+            </ul>
+          </div>
+          
+          <div style="margin: 32px 0; text-align: center;">
+            <a href="https://yammservices.com/funding-ready-program/" 
+               style="display: inline-block; background: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Learn About Our Workshop
+            </a>
+          </div>
+          
+          <p style="font-size: 14px; line-height: 1.6; color: #64748b; margin-top: 32px;">
+            Questions? We're here to help. Reply to this email or visit our website.
+          </p>
+          
+          <p style="font-size: 14px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
             Best regards,<br>
-            The Funding Readiness Team
+            <strong>The Funding Readiness Team</strong>
           </p>
         </div>
       `;
@@ -181,8 +210,48 @@ const EmailCapture = () => {
       await supabase.functions.invoke('send-email', {
         body: {
           to: userEmail,
-          subject: 'Your Funding Readiness Results - PDF Attached',
-          htmlContent: welcomeHtml,
+          subject: '🎉 Your Funding Readiness Assessment is Complete!',
+          htmlContent: confirmationHtml
+        }
+      });
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
+      // Don't block flow if confirmation fails
+    }
+  };
+
+  const sendPDFViaEmail = async (userEmail: string, pdfData: string) => {
+    try {
+      const pdfEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #6366f1; font-size: 22px; margin-bottom: 16px;">📊 Your Funding Readiness Results (PDF)</h1>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #334155;">
+            As promised, here's your detailed funding readiness assessment report attached to this email.
+          </p>
+          
+          <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 14px; color: #475569;">
+              💡 <strong>Pro Tip:</strong> Save this PDF for reference and share it with your team to discuss next steps together.
+            </p>
+          </div>
+          
+          <p style="font-size: 14px; color: #64748b; margin-top: 24px;">
+            Ready to take action? Our Funding-Ready Workshop can help you transform these insights into a comprehensive funding package.
+          </p>
+          
+          <p style="font-size: 14px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            Best regards,<br>
+            <strong>The Funding Readiness Team</strong>
+          </p>
+        </div>
+      `;
+
+      await supabase.functions.invoke('send-email', {
+        body: {
+          to: userEmail,
+          subject: '📊 Your Funding Readiness Results - PDF Report',
+          htmlContent: pdfEmailHtml,
           attachments: [{
             filename: 'funding-readiness-results.pdf',
             content: pdfData
