@@ -7,6 +7,7 @@ import QuestionCard from '../components/QuestionCard';
 import { ASSESSMENT_QUESTIONS } from '../lib/copy';
 import type { ScoreLevel } from '../lib/scoring';
 import { toast } from 'sonner';
+import Header from '@/components/Header';
 
 const Checklist = () => {
   const navigate = useNavigate();
