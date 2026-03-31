@@ -142,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       doc.setFontSize(14);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Personalized Results for ${userEmail}`, 105, 40, { align: 'center' });
+      doc.text('Your Personalized Results', 105, 40, { align: 'center' });
 
       // Overall score section
       let yPos = 80;
