@@ -72,7 +72,7 @@ const Checklist = () => {
 
   return (
     <div className="min-h-screen assessment-bg">
-      <Header />
+      <Header showHome />
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
