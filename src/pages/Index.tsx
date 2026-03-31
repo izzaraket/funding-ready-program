@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Target, TrendingUp, Users } from 'lucide-react';
+import Header from '@/components/Header';
 
 const Index = () => {
   const navigate = useNavigate();
