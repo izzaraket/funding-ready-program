@@ -14,7 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_results: {
+        Row: {
+          answers: Json | null
+          category_scores: Json | null
+          created_at: string | null
+          data_storage_consent: boolean | null
+          email: string | null
+          id: string
+          overall_percent: number | null
+          pdf_data: string | null
+          profile: string | null
+          user_id: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          category_scores?: Json | null
+          created_at?: string | null
+          data_storage_consent?: boolean | null
+          email?: string | null
+          id?: string
+          overall_percent?: number | null
+          pdf_data?: string | null
+          profile?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          category_scores?: Json | null
+          created_at?: string | null
+          data_storage_consent?: boolean | null
+          email?: string | null
+          id?: string
+          overall_percent?: number | null
+          pdf_data?: string | null
+          profile?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      email_captures: {
+        Row: {
+          assessment_result_id: string | null
+          captured_at: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          source: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          assessment_result_id?: string | null
+          captured_at?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          source?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          assessment_result_id?: string | null
+          captured_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          source?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_captures_assessment_result_id_fkey"
+            columns: ["assessment_result_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scholarship_applications: {
+        Row: {
+          commitment_confirmed: boolean | null
+          created_at: string | null
+          id: string
+          org_name: string | null
+          program_summary: string | null
+          roadblock: string | null
+          user_id: string
+        }
+        Insert: {
+          commitment_confirmed?: boolean | null
+          created_at?: string | null
+          id?: string
+          org_name?: string | null
+          program_summary?: string | null
+          roadblock?: string | null
+          user_id: string
+        }
+        Update: {
+          commitment_confirmed?: boolean | null
+          created_at?: string | null
+          id?: string
+          org_name?: string | null
+          program_summary?: string | null
+          roadblock?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      workshop_registrations: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
