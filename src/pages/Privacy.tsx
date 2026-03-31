@@ -1,25 +1,12 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import Header from '@/components/Header';
 
 const Privacy = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen bg-white">
+      <Header showHome />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </Button>
-        </div>
 
         <div className="prose prose-lg max-w-none">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
