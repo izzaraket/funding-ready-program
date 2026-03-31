@@ -267,6 +267,7 @@ const EmailCapture = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-6">
