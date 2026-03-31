@@ -1,88 +1,42 @@
 
 
-# Recreate Database for Lovable Cloud
+# Rebrand App to YAMM (#f50068)
 
-After migrating to Lovable Cloud, the database is empty. We need to recreate 4 tables that the app depends on.
+## What We'll Do
+Replace all green branding with YAMM's pink `#f50068`, swap favicons, add YAMM logo with link to yammservices.com across all pages.
 
----
+## Steps
 
-## Tables to Create
+### 1. Replace favicon and add brand assets
+- **Delete** `public/favicon.ico`
+- **Copy** uploaded files to `public/`: `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `site.webmanifest`, `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png`
+- **Copy** `YAMM_LOGO_03.png` to `public/yamm-logo.png`
 
-### 1. `email_captures`
-Stores emails collected from the email capture page.
+### 2. Update `index.html`
+- Replace favicon link with new references (favicon.ico, favicon.svg, apple-touch-icon, webmanifest)
+- Remove old lovable-uploads favicon reference
+- Update OG/Twitter images to use YAMM logo
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | PK, default gen_random_uuid() |
-| email | text | NOT NULL |
-| source | text | default 'email_capture_page' |
-| user_agent | text | nullable |
-| ip_address | text | nullable |
-| assessment_result_id | uuid | nullable, FK to assessment_results |
-| captured_at | timestamptz | default now() |
+### 3. Update `src/index.css` — Primary color swap
+- Change `--primary` from `142 76% 36%` (green) to `338 100% 48%` (pink `#f50068`)
+- Update `--ring`, `--hero-bg`, `--success`, `--progress-fill`, `--band-high` to match
+- Update `.band-high` from `green-100/800/200` to `pink-100/800/200`
+- Update `.bar-high` from `bg-green-500` to pink equivalent
+- Same changes in dark mode
 
-### 2. `users`
-Simple user records (not auth users -- just email contacts).
+### 4. Create `src/components/Header.tsx`
+- Shared header with YAMM logo linking to `https://yammservices.com` (opens new tab)
+- Clean, minimal design
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | PK, default gen_random_uuid() |
-| email | text | NOT NULL, UNIQUE |
-| created_at | timestamptz | default now() |
+### 5. Add Header to all pages
+- `Index.tsx`, `Checklist.tsx`, `Results.tsx`, `EmailCapture.tsx` — import and render `<Header />` at top
 
-### 3. `assessment_results`
-Stores completed assessment data and generated PDFs.
+### 6. Fix hardcoded green classes
+- `Index.tsx`: `bg-primary/10` etc. already use CSS vars (no change needed)
+- `BarMeter.tsx`, `BandChip.tsx`: update any hardcoded `green-*` classes to use brand pink
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | PK, default gen_random_uuid() |
-| user_id | uuid | nullable |
-| email | text | nullable |
-| answers | jsonb | nullable |
-| category_scores | jsonb | nullable |
-| profile | text | nullable |
-| overall_percent | integer | nullable |
-| pdf_data | text | nullable |
-| data_storage_consent | boolean | default false |
-| created_at | timestamptz | default now() |
-
-### 4. `scholarship_applications`
-Workshop scholarship applications.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | PK, default gen_random_uuid() |
-| user_id | uuid | NOT NULL |
-| org_name | text | nullable |
-| program_summary | text | nullable |
-| roadblock | text | nullable |
-| commitment_confirmed | boolean | default false |
-| created_at | timestamptz | default now() |
-
-### 5. `workshop_registrations`
-Workshop registration data.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | PK, default gen_random_uuid() |
-| user_id | uuid | nullable |
-| created_at | timestamptz | default now() |
-
----
-
-## RLS Policies
-
-All tables will have RLS enabled. Since edge functions use the **service role key** (bypasses RLS), and most data is inserted server-side, policies should:
-
-- **email_captures**: No public read. Service role handles all inserts.
-- **users**: No public read. Service role handles all inserts.
-- **assessment_results**: Allow authenticated users to read their own rows (`user_id = auth.uid()`). Service role handles inserts from edge functions.
-- **scholarship_applications**: Allow authenticated users to insert/read their own rows.
-- **workshop_registrations**: Service role handles all access; no public policies needed.
-
----
-
-## Implementation
-
-One database migration creating all 5 tables with RLS enabled and appropriate policies. The build errors in `Results.tsx` and `WorkshopSignup.tsx` will resolve once the tables exist and types are regenerated.
+## Technical Notes
+- `#f50068` → HSL `338 100% 48%`
+- Since the app uses CSS custom properties for primary color, most components auto-update
+- Only hardcoded Tailwind green classes (in band/bar components and index.css) need manual updates
 
