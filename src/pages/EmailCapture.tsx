@@ -10,6 +10,7 @@ import { calculateResults } from '@/lib/scoring';
 import { PROFILE_COPY } from '@/lib/copy';
 import { Checkbox } from '@/components/ui/checkbox';
 import { z } from 'zod';
+import Header from '@/components/Header';
 
 const emailSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" })

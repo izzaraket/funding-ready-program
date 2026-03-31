@@ -33,6 +33,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <Header />
       {/* Hero Section */}
       <section className="hero-section py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">

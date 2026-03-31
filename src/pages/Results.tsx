@@ -9,6 +9,7 @@ import type { ScoreLevel, AssessmentResult } from '../lib/scoring';
 import { Download, RotateCcw, Users, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import Header from '@/components/Header';
 
 const Results = () => {
   const navigate = useNavigate();
