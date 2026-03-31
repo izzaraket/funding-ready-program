@@ -9,6 +9,7 @@ import type { ScoreLevel, AssessmentResult } from '../lib/scoring';
 import { Download, RotateCcw, Users, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import Header from '@/components/Header';
 
 const Results = () => {
   const navigate = useNavigate();
@@ -130,6 +131,7 @@ const Results = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-6">

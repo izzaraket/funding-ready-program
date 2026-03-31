@@ -10,6 +10,7 @@ import { calculateResults } from '@/lib/scoring';
 import { PROFILE_COPY } from '@/lib/copy';
 import { Checkbox } from '@/components/ui/checkbox';
 import { z } from 'zod';
+import Header from '@/components/Header';
 
 const emailSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" })
@@ -266,6 +267,7 @@ const EmailCapture = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-6">

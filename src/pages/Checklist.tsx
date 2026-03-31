@@ -7,6 +7,7 @@ import QuestionCard from '../components/QuestionCard';
 import { ASSESSMENT_QUESTIONS } from '../lib/copy';
 import type { ScoreLevel } from '../lib/scoring';
 import { toast } from 'sonner';
+import Header from '@/components/Header';
 
 const Checklist = () => {
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ const Checklist = () => {
 
   return (
     <div className="min-h-screen assessment-bg">
+      <Header />
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
