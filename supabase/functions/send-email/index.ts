@@ -130,7 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send(emailPayload);
 
-    console.log('Email sent successfully:', emailResponse);
+    console.log('Email sent successfully, id:', emailResponse.data?.id);
 
     return new Response(JSON.stringify({
       success: true,

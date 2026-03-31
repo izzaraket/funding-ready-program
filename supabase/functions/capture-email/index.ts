@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const sanitizedEmail = email.trim().toLowerCase();
-    console.log('Capturing email from IP:', ipAddress.substring(0, 8));
+    console.log('Processing email capture request');
 
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     const supabase = createClient(
