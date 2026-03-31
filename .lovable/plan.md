@@ -1,42 +1,37 @@
 
 
-# Rebrand App to YAMM (#f50068)
+# Add Navigation Buttons to Header
 
-## What We'll Do
-Replace all green branding with YAMM's pink `#f50068`, swap favicons, add YAMM logo with link to yammservices.com across all pages.
+## Approach
+Update the shared `Header` component to accept optional navigation props and render a Home button and/or Back button alongside the YAMM logo.
 
-## Steps
+## Navigation Logic by Page
 
-### 1. Replace favicon and add brand assets
-- **Delete** `public/favicon.ico`
-- **Copy** uploaded files to `public/`: `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `site.webmanifest`, `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png`
-- **Copy** `YAMM_LOGO_03.png` to `public/yamm-logo.png`
+| Page | Home Button | Back Button |
+|------|------------|-------------|
+| `/` (Index) | No | No |
+| `/checklist` | Yes (→ `/`) | No |
+| `/results` | Yes (→ `/`) | Yes (→ `/checklist`) |
+| `/email-capture` | Yes (→ `/`) | Yes (→ `/results`) |
+| `/workshop-signup` | Yes (→ `/`) | Yes (→ `/results`) |
+| `/privacy` | Yes (→ `/`) | No |
+| `NotFound` | Yes (→ `/`) | No |
 
-### 2. Update `index.html`
-- Replace favicon link with new references (favicon.ico, favicon.svg, apple-touch-icon, webmanifest)
-- Remove old lovable-uploads favicon reference
-- Update OG/Twitter images to use YAMM logo
+## Changes
 
-### 3. Update `src/index.css` — Primary color swap
-- Change `--primary` from `142 76% 36%` (green) to `338 100% 48%` (pink `#f50068`)
-- Update `--ring`, `--hero-bg`, `--success`, `--progress-fill`, `--band-high` to match
-- Update `.band-high` from `green-100/800/200` to `pink-100/800/200`
-- Update `.bar-high` from `bg-green-500` to pink equivalent
-- Same changes in dark mode
+### 1. `src/components/Header.tsx`
+- Add optional `showHome` and `backTo` props
+- Render a Home icon-button (links to `/`) on the right side when `showHome` is true
+- Render a Back arrow button with label when `backTo` is provided
+- Use `react-router-dom`'s `useNavigate` for navigation
+- Use `Home` and `ArrowLeft` icons from lucide-react
 
-### 4. Create `src/components/Header.tsx`
-- Shared header with YAMM logo linking to `https://yammservices.com` (opens new tab)
-- Clean, minimal design
-
-### 5. Add Header to all pages
-- `Index.tsx`, `Checklist.tsx`, `Results.tsx`, `EmailCapture.tsx` — import and render `<Header />` at top
-
-### 6. Fix hardcoded green classes
-- `Index.tsx`: `bg-primary/10` etc. already use CSS vars (no change needed)
-- `BarMeter.tsx`, `BandChip.tsx`: update any hardcoded `green-*` classes to use brand pink
-
-## Technical Notes
-- `#f50068` → HSL `338 100% 48%`
-- Since the app uses CSS custom properties for primary color, most components auto-update
-- Only hardcoded Tailwind green classes (in band/bar components and index.css) need manual updates
+### 2. Update each page's `<Header />` usage
+- `Index.tsx`: `<Header />` (no nav buttons)
+- `Checklist.tsx`: `<Header showHome />`
+- `Results.tsx`: `<Header showHome backTo="/checklist" />`
+- `EmailCapture.tsx`: `<Header showHome backTo="/results" />`
+- `WorkshopSignup.tsx`: `<Header showHome backTo="/results" />`
+- `Privacy.tsx`: `<Header showHome />`
+- `NotFound.tsx`: `<Header showHome />`
 
